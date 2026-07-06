@@ -47,9 +47,12 @@ button.up:disabled { background:#4e5058; cursor:not-allowed; }
 .nut-tab { padding:8px 18px; border:none; border-radius:4px 4px 0 0; background:#232428; color:#949ba4; cursor:pointer; font-size:14px; }
 .nut-tab.dangchon { background:#313338; color:#fff; font-weight:bold; }
 
-#vung-xem { background:#313338; padding:24px; border-radius:8px; max-width:640px; }
-#khung-anh { display:flex; flex-direction:column; gap:10px; margin-top:14px; width:480px; max-height:70vh; overflow-y:auto; background:#232428; padding:10px; border-radius:6px; }
-#khung-anh img { width:100%; border-radius:4px; display:block; }
+#vung-xem { background:#313338; padding:24px; border-radius:8px; max-width:800px; margin:0 auto; }
+#vung-xem h3 { text-align:center; }
+.thanh-dieu-huong { display:flex; justify-content:space-between; gap:8px; margin:14px 0; }
+.thanh-dieu-huong button { flex:1; }
+#khung-anh { display:flex; flex-direction:column; align-items:center; gap:4px; margin-top:6px; max-height:75vh; overflow-y:auto; background:#232428; padding:10px; border-radius:6px; }
+#khung-anh img { max-width:100%; width:100%; border-radius:2px; display:block; margin:0 auto; }
 
 .dong-tien-trinh.thanh-cong { color:#3ba55c; }
 .dong-tien-trinh.that-bai { color:#f23f42; }
