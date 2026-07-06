@@ -41,12 +41,19 @@
 
     <div id="vung-xem" style="display:none;">
         <h3>Xem ảnh trong kênh: <span id="ten-kenh-dang-xem">Chưa chọn kênh</span></h3>
-        <div class="hang-nut">
-            <button type="button" class="nut-phu" id="nut-kenh-truoc" disabled>◀ Kênh trước</button>
-            <button type="button" class="nut-phu" id="nut-kenh-sau" disabled>Kênh sau ▶</button>
-        </div>
         <div class="canh-bao" id="canh-bao-xem" style="display:none;"></div>
+
+        <div class="thanh-dieu-huong">
+            <button type="button" class="nut-phu" id="nut-kenh-truoc-1" disabled>◀ Kênh trước</button>
+            <button type="button" class="nut-phu" id="nut-kenh-sau-1" disabled>Kênh sau ▶</button>
+        </div>
+
         <div id="khung-anh"></div>
+
+        <div class="thanh-dieu-huong">
+            <button type="button" class="nut-phu" id="nut-kenh-truoc-2" disabled>◀ Kênh trước</button>
+            <button type="button" class="nut-phu" id="nut-kenh-sau-2" disabled>Kênh sau ▶</button>
+        </div>
     </div>
 </div>
 
@@ -358,8 +365,10 @@ async function taiAnhTrongKenh() {
 }
 
 // ----- Chuyển kênh trước/sau (chỉ trong cùng danh mục) -----
-const nutKenhTruoc = document.getElementById('nut-kenh-truoc');
-const nutKenhSau = document.getElementById('nut-kenh-sau');
+const nutKenhTruoc1 = document.getElementById('nut-kenh-truoc-1');
+const nutKenhSau1 = document.getElementById('nut-kenh-sau-1');
+const nutKenhTruoc2 = document.getElementById('nut-kenh-truoc-2');
+const nutKenhSau2 = document.getElementById('nut-kenh-sau-2');
 
 function layDanhSachCungDanhMuc(kenhId) {
     const kenhHienTai = danhSachKenhToanBo.find(k => k.id === kenhId);
@@ -373,27 +382,37 @@ function layDanhSachCungDanhMuc(kenhId) {
 
 function capNhatNutChuyenKenh() {
     if (!kenhDangChonId) {
-        nutKenhTruoc.disabled = true;
-        nutKenhSau.disabled = true;
+        [nutKenhTruoc1, nutKenhSau1, nutKenhTruoc2, nutKenhSau2].forEach(n => n.disabled = true);
         return;
     }
     const cungDanhMuc = layDanhSachCungDanhMuc(kenhDangChonId);
     const viTri = cungDanhMuc.findIndex(k => k.id === kenhDangChonId);
-    nutKenhTruoc.disabled = viTri <= 0;
-    nutKenhSau.disabled = viTri === -1 || viTri >= cungDanhMuc.length - 1;
+    const khongConTruoc = viTri <= 0;
+    const khongConSau = viTri === -1 || viTri >= cungDanhMuc.length - 1;
+
+    nutKenhTruoc1.disabled = khongConTruoc;
+    nutKenhTruoc2.disabled = khongConTruoc;
+    nutKenhSau1.disabled = khongConSau;
+    nutKenhSau2.disabled = khongConSau;
 }
 
-nutKenhTruoc.addEventListener('click', function() {
+function chuyenKenhTruoc() {
     const cungDanhMuc = layDanhSachCungDanhMuc(kenhDangChonId);
     const viTri = cungDanhMuc.findIndex(k => k.id === kenhDangChonId);
     if (viTri > 0) chonKenh(cungDanhMuc[viTri - 1]);
-});
+}
 
-nutKenhSau.addEventListener('click', function() {
+function chuyenKenhSau() {
     const cungDanhMuc = layDanhSachCungDanhMuc(kenhDangChonId);
     const viTri = cungDanhMuc.findIndex(k => k.id === kenhDangChonId);
     if (viTri !== -1 && viTri < cungDanhMuc.length - 1) chonKenh(cungDanhMuc[viTri + 1]);
-});
+}
+
+nutKenhTruoc1.addEventListener('click', chuyenKenhTruoc);
+nutKenhTruoc2.addEventListener('click', chuyenKenhTruoc);
+nutKenhSau1.addEventListener('click', chuyenKenhSau);
+nutKenhSau2.addEventListener('click', chuyenKenhSau);
+
 
 </script>
 </body>
