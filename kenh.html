@@ -2,28 +2,24 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Chọn kênh & Upload ảnh</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="trang-kenh">
 
+<button type="button" class="nut-mobile-toggle" id="nut-mobile-trai" aria-label="Mở danh sách kênh">☰</button>
+<button type="button" class="nut-mobile-toggle" id="nut-mobile-phai" aria-label="Mở menu">⋮</button>
+
 <div id="cot-kenh">
     <h3>Kênh trong server</h3>
+    <input type="text" id="tim-kiem-kenh" placeholder="Tìm kênh hoặc danh mục...">
     <div class="canh-bao" id="canh-bao-kenh" style="display:none;"></div>
     <div id="danh-sach-kenh"></div>
 </div>
+<div class="lop-phu" id="lop-phu-trai"></div>
 
 <div id="cot-noidung">
-    <div class="top-bar">
-        <span id="hien-thi-guild"></span>
-        <a href="#" id="nut-dangxuat">Đăng xuất</a>
-    </div>
-
-    <div class="hang-tab">
-        <button type="button" class="nut-tab dangchon" id="tab-btn-upload">Upload ảnh</button>
-        <button type="button" class="nut-tab" id="tab-btn-xem">Xem ảnh</button>
-    </div>
-
     <div id="vung-upload">
         <h3>Upload ảnh lên kênh: <span id="ten-kenh-dachon">Chưa chọn kênh</span></h3>
         <input type="file" id="input-anh" accept="image/*" multiple disabled>
@@ -40,22 +36,41 @@
     </div>
 
     <div id="vung-xem" style="display:none;">
-        <h3>Xem ảnh trong kênh: <span id="ten-kenh-dang-xem">Chưa chọn kênh</span></h3>
-        <div class="canh-bao" id="canh-bao-xem" style="display:none;"></div>
-
-        <div class="thanh-dieu-huong">
-            <button type="button" class="nut-phu" id="nut-kenh-truoc-1" disabled>◀ Kênh trước</button>
-            <button type="button" class="nut-phu" id="nut-kenh-sau-1" disabled>Kênh sau ▶</button>
+        <div class="vung-xem-header">
+            <h3>Đang xem: <span id="ten-kenh-dang-xem">Chưa chọn kênh</span></h3>
+            <div class="canh-bao" id="canh-bao-xem" style="display:none;"></div>
+            <div class="thanh-dieu-huong">
+                <button type="button" class="nut-phu" id="nut-kenh-truoc-1" disabled>◀ Kênh trước</button>
+                <button type="button" class="nut-phu" id="nut-kenh-sau-1" disabled>Kênh sau ▶</button>
+            </div>
         </div>
 
         <div id="khung-anh"></div>
 
-        <div class="thanh-dieu-huong">
-            <button type="button" class="nut-phu" id="nut-kenh-truoc-2" disabled>◀ Kênh trước</button>
-            <button type="button" class="nut-phu" id="nut-kenh-sau-2" disabled>Kênh sau ▶</button>
+        <div class="vung-xem-footer">
+            <div class="thanh-dieu-huong">
+                <button type="button" class="nut-phu" id="nut-kenh-truoc-2" disabled>◀ Kênh trước</button>
+                <button type="button" class="nut-phu" id="nut-kenh-sau-2" disabled>Kênh sau ▶</button>
+            </div>
         </div>
     </div>
 </div>
+
+<div id="thanh-phai">
+    <button type="button" id="nut-thu-gon-phai" title="Thu gọn / mở rộng">‹</button>
+    <div class="thanh-phai-noidung">
+        <div class="thanh-phai-block">
+            <div id="hien-thi-guild"></div>
+            <a href="#" id="nut-dangxuat"><span class="icon-tab">⏻</span><span class="thanh-phai-nhan">Đăng xuất</span></a>
+        </div>
+        <hr>
+        <div class="hang-tab thanh-phai-block">
+            <button type="button" class="nut-tab dangchon" id="tab-btn-upload"><span class="icon-tab">📤</span><span class="thanh-phai-nhan">Upload ảnh</span></button>
+            <button type="button" class="nut-tab" id="tab-btn-xem"><span class="icon-tab">📖</span><span class="thanh-phai-nhan">Xem ảnh</span></button>
+        </div>
+    </div>
+</div>
+<div class="lop-phu" id="lop-phu-phai"></div>
 
 <script src="config.js"></script>
 <script>
@@ -77,6 +92,8 @@ let kenhDangChonId = null;
 let boDemId = 0;
 let danhSachFileDaChon = [];
 let danhSachKenhToanBo = [];
+let danhMucDangDong = new Set();
+let tuKhoaTimKiem = '';
 
 // ----- Tải danh sách kênh -----
 async function taiDanhSachKenh() {
@@ -96,41 +113,99 @@ async function taiDanhSachKenh() {
             return;
         }
 
-        veCayKenh(data.kenh);
         danhSachKenhToanBo = data.kenh;
+        veCayKenh();
     } catch (err) {
         canhBao.textContent = 'Lỗi kết nối: ' + err.message;
         canhBao.style.display = 'block';
     }
 }
 
-function veCayKenh(danhSachKenh) {
+function chuoiKhongDau(s) {
+    return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function veCayKenh() {
     const container = document.getElementById('danh-sach-kenh');
     container.innerHTML = '';
 
     const nhomTheoCha = {};
-    danhSachKenh.forEach(function(k) {
+    danhSachKenhToanBo.forEach(function(k) {
         const key = k.parent_id || 'goc';
         if (!nhomTheoCha[key]) nhomTheoCha[key] = [];
         nhomTheoCha[key].push(k);
     });
 
     const sapXep = (a, b) => (a.position || 0) - (b.position || 0);
+    const dangTim = tuKhoaTimKiem.trim().length > 0;
+    const tuKhoa = chuoiKhongDau(tuKhoaTimKiem.trim());
+    const khopTuKhoa = (ten) => chuoiKhongDau(ten).includes(tuKhoa);
 
     const kenhGoc = (nhomTheoCha['goc'] || []).filter(k => k.type !== 4).sort(sapXep);
-    const danhSachCategory = danhSachKenh.filter(k => k.type === 4).sort(sapXep);
+    const danhSachCategory = danhSachKenhToanBo.filter(k => k.type === 4).sort(sapXep);
 
-    kenhGoc.forEach(k => container.appendChild(taoDongKenh(k)));
+    let tongSoHienThi = 0;
+
+    // Kênh gốc (không thuộc danh mục nào)
+    kenhGoc.forEach(function(k) {
+        if (dangTim && !khopTuKhoa(k.name)) return;
+        container.appendChild(taoDongKenh(k));
+        tongSoHienThi++;
+    });
 
     danhSachCategory.forEach(function(cat) {
+        const conCua = (nhomTheoCha[cat.id] || []).filter(k => k.type !== 4).sort(sapXep);
+
+        let conHienThi = conCua;
+        let catTuKhop = false;
+        if (dangTim) {
+            catTuKhop = khopTuKhoa(cat.name);
+            conHienThi = catTuKhop ? conCua : conCua.filter(k => khopTuKhoa(k.name));
+            if (conHienThi.length === 0 && !catTuKhop) return; // không có gì khớp trong danh mục này
+        }
+
+        const wrapCategory = document.createElement('div');
+        wrapCategory.className = 'category-block';
+
+        const dangDong = !dangTim && danhMucDangDong.has(cat.id);
+
         const tieuDe = document.createElement('div');
         tieuDe.className = 'category-ten';
-        tieuDe.textContent = cat.name;
-        container.appendChild(tieuDe);
+        tieuDe.innerHTML = '<span class="category-mui-ten' + (dangDong ? ' dong' : '') + '">▶</span><span>' + escapeHtml(cat.name) + '</span>';
+        tieuDe.addEventListener('click', function() {
+            if (danhMucDangDong.has(cat.id)) danhMucDangDong.delete(cat.id);
+            else danhMucDangDong.add(cat.id);
+            veCayKenh();
+        });
+        wrapCategory.appendChild(tieuDe);
 
-        const conCua = (nhomTheoCha[cat.id] || []).filter(k => k.type !== 4).sort(sapXep);
-        conCua.forEach(k => container.appendChild(taoDongKenh(k)));
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'category-con' + (dangDong ? ' dong' : '');
+        conHienThi.forEach(k => childrenContainer.appendChild(taoDongKenh(k)));
+        wrapCategory.appendChild(childrenContainer);
+
+        container.appendChild(wrapCategory);
+        tongSoHienThi += conHienThi.length;
     });
+
+    if (dangTim && tongSoHienThi === 0) {
+        const thongBao = document.createElement('div');
+        thongBao.className = 'khong-tim-thay';
+        thongBao.textContent = 'Không tìm thấy kênh hoặc danh mục phù hợp.';
+        container.appendChild(thongBao);
+    }
+
+    // Giữ trạng thái chọn kênh hiện tại (nếu còn hiển thị)
+    if (kenhDangChonId) {
+        const divTuongUng = container.querySelector('.kenh-item[data-id="' + kenhDangChonId + '"]');
+        if (divTuongUng) divTuongUng.classList.add('dangchon');
+    }
+}
+
+function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
 }
 
 function taoDongKenh(kenh) {
@@ -142,6 +217,12 @@ function taoDongKenh(kenh) {
     div.addEventListener('click', function() { chonKenh(kenh); });
     return div;
 }
+
+const inputTimKiem = document.getElementById('tim-kiem-kenh');
+inputTimKiem.addEventListener('input', function() {
+    tuKhoaTimKiem = inputTimKiem.value;
+    veCayKenh();
+});
 
 function chonKenh(kenh) {
     document.querySelectorAll('.kenh-item').forEach(x => x.classList.remove('dangchon'));
@@ -157,6 +238,9 @@ function chonKenh(kenh) {
     capNhatNutChuyenKenh();
 
     if (tabDangMo === 'xem') taiAnhTrongKenh();
+
+    // Trên điện thoại, chọn kênh xong thì tự đóng sidebar trái
+    dongMobile('trai');
 }
 
 taiDanhSachKenh();
@@ -308,6 +392,7 @@ nutTabUpload.addEventListener('click', function() {
     nutTabXem.classList.remove('dangchon');
     vungUpload.style.display = 'block';
     vungXem.style.display = 'none';
+    dongMobile('phai');
 });
 
 nutTabXem.addEventListener('click', function() {
@@ -315,8 +400,9 @@ nutTabXem.addEventListener('click', function() {
     nutTabXem.classList.add('dangchon');
     nutTabUpload.classList.remove('dangchon');
     vungUpload.style.display = 'none';
-    vungXem.style.display = 'block';
+    vungXem.style.display = 'flex';
     if (kenhDangChonId) taiAnhTrongKenh();
+    dongMobile('phai');
 });
 
 // ----- Xem ảnh trong kênh -----
@@ -350,6 +436,7 @@ async function taiAnhTrongKenh() {
                 const img = document.createElement('img');
                 img.src = anh.url;
                 img.alt = anh.filename;
+                img.loading = 'lazy';
                 khungAnh.appendChild(img);
             });
         });
@@ -413,6 +500,45 @@ nutKenhTruoc2.addEventListener('click', chuyenKenhTruoc);
 nutKenhSau1.addEventListener('click', chuyenKenhSau);
 nutKenhSau2.addEventListener('click', chuyenKenhSau);
 
+// ----- Thu gọn / mở rộng thanh bên phải (desktop) -----
+const thanhPhai = document.getElementById('thanh-phai');
+const nutThuGonPhai = document.getElementById('nut-thu-gon-phai');
+
+nutThuGonPhai.addEventListener('click', function() {
+    thanhPhai.classList.toggle('thu-gon');
+    nutThuGonPhai.textContent = thanhPhai.classList.contains('thu-gon') ? '›' : '‹';
+});
+
+// ----- Menu di động: mở/đóng 2 thanh bên bằng nút nổi + lớp phủ -----
+const cotKenh = document.getElementById('cot-kenh');
+const nutMobileTrai = document.getElementById('nut-mobile-trai');
+const nutMobilePhai = document.getElementById('nut-mobile-phai');
+const lopPhuTrai = document.getElementById('lop-phu-trai');
+const lopPhuPhai = document.getElementById('lop-phu-phai');
+
+function moMobile(ben) {
+    if (ben === 'trai') {
+        cotKenh.classList.add('mo');
+        lopPhuTrai.classList.add('mo');
+    } else {
+        thanhPhai.classList.add('mo');
+        lopPhuPhai.classList.add('mo');
+    }
+}
+function dongMobile(ben) {
+    if (ben === 'trai') {
+        cotKenh.classList.remove('mo');
+        lopPhuTrai.classList.remove('mo');
+    } else {
+        thanhPhai.classList.remove('mo');
+        lopPhuPhai.classList.remove('mo');
+    }
+}
+
+nutMobileTrai.addEventListener('click', function() { moMobile('trai'); });
+nutMobilePhai.addEventListener('click', function() { moMobile('phai'); });
+lopPhuTrai.addEventListener('click', function() { dongMobile('trai'); });
+lopPhuPhai.addEventListener('click', function() { dongMobile('phai'); });
 
 </script>
 </body>
